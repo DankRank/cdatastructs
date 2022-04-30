@@ -42,7 +42,7 @@ void *trie_get(struct trie_node **root, const char *key)
 void *trie_set(struct trie_node **root, const char *key, void *value)
 {
 	struct trie_node *n = *root;
-	if (!n) {
+	if (!n) { // create root node
 		n = malloc(trie_node_size(1));
 		if (!n)
 			abort();
@@ -50,31 +50,34 @@ void *trie_set(struct trie_node **root, const char *key, void *value)
 		n->cap = 1;
 		*root = n;
 	}
-	while (*key) {
+	while (*key) { // walk the trie to find the leaf
 		int ent = ent_find(n, (unsigned char)*key);
-		if (!trie_is_found(ent, n, *key)) {
-			if (!value)
+		if (!trie_is_found(ent, n, *key)) { // create missing node
+			if (!value) // ...unless we're deleting
 				return NULL;
-			int cap = key[1] ? 1 : 0;
+			int cap = key[1] ? 1 : 0; // if it's a leaf, use capacity of 0
 			struct trie_node *node = malloc(trie_node_size(cap));
 			if (!node)
 				abort();
 			memset(node, 0, trie_node_size(0));
 			node->key = *key;
 			node->cap = cap;
-			if (n->len == n->cap) {
+			if (n->len == n->cap) { // reallocate the node
 				n->cap = n->cap*2 + 1; // 0 1 3 7 15 31 63 127 255
+				// we have to update parent's pointer, but ent_find needs that pointer to be valid.
+				// so we have to locate it *before* reallocing.
 				struct trie_node **pent = n->parent ? &n->parent->data[ent_find(n->parent, n->key)] : root;
 				struct trie_node *nn = realloc(n, trie_node_size(n->cap));
 				if (!nn)
 					abort();
-				if (n != nn) {
+				if (n != nn) { // update pointers
 					n = nn;
 					*pent = n;
 					for (int i = 0; i < n->len; i++)
 						n->data[i]->parent = n;
 				}
 			}
+			// insert the new node
 			node->parent = n;
 			memmove(&n->data[ent+1], &n->data[ent], trie_data_size(n->len++ - ent));
 			n->data[ent] = node;
@@ -87,7 +90,7 @@ void *trie_set(struct trie_node **root, const char *key, void *value)
 	void *oldvalue = n->value;
 	n->value = value;
 	if (!value) {
-		while (!n->value && !n->len) {
+		while (!n->value && !n->len) { // free no longer used nodes
 			if (n->parent) {
 				struct trie_node *p = n->parent;
 				int ent = ent_find(p, n->key);
@@ -118,7 +121,7 @@ void trie_free(struct trie_node **root) {
 }
 int trie_findnext(struct trie_find **pf) {
 	struct trie_find *f = *pf;
-	int ent = 0;
+	int ent = 0; // go to the first child node
 	for (;;) {
 		if (!trie_is_end(ent, f->n)) {
 			if (f->len == f->cap) {
@@ -130,12 +133,12 @@ int trie_findnext(struct trie_find **pf) {
 			}
 			f->n = f->n->data[ent];
 			f->key[f->len++] = f->n->key;
-			if (f->n->value) {
+			if (f->n->value) { // found a value
 				f->key[f->len] = '\0';
 				return 1;
 			}
-			ent = 0;
-		} else {
+			ent = 0; // no value, go to the first child
+		} else { // no more children, go to parent's next child
 			f->n = f->n->parent;
 			if (!f->n) {
 				*pf = NULL;
