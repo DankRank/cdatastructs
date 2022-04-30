@@ -9,25 +9,23 @@ struct trie_node {
 	char key;
 	unsigned char len;
 	unsigned char cap;
-	struct trie_node **data;
 	void *value;
 	struct trie_node *parent;
+	struct trie_node *data[1];
 };
 // get value from trie O(n log s)
-void *trie_get(struct trie_node *n, const char *key);
+void *trie_get(struct trie_node **root, const char *key);
 // set value in trie O(ns)
-void *trie_set(struct trie_node *n, const char *key, void *value);
-// create a new trie
-struct trie_node *trie_new(void);
+void *trie_set(struct trie_node **root, const char *key, void *value);
 // free a trie
-void trie_free(struct trie_node *n);
+void trie_free(struct trie_node **root);
 struct trie_find {
 	struct trie_node *n;
 	size_t len;
 	size_t cap;
 	char key[1];
 };
-int trie_findfirst(struct trie_find **pf, struct trie_node *root);
+int trie_findfirst(struct trie_find **pf, struct trie_node **root);
 int trie_findnext(struct trie_find **pf);
 #ifdef __cplusplus
 }

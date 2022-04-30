@@ -1,4 +1,4 @@
-CFLAGS=-g
+CFLAGS=-g -Wall -Wextra
 .PHONY: all clean
 all: test_trie
 clean:
