@@ -39,13 +39,16 @@ void *trie_get(struct trie_node **root, const char *key)
 	return n->value;
 }
 // set value in trie O(ns)
-void *trie_set(struct trie_node **root, const char *key, void *value)
+int trie_set(struct trie_node **root, const char *key, const void *value, void **oldvalue)
 {
+	int rv = 0;
+	if (oldvalue)
+		*oldvalue = NULL;
 	struct trie_node *n = *root;
 	if (!n) { // create root node
 		n = malloc(trie_node_size(1));
 		if (!n)
-			abort();
+			return -1;
 		memset(n, 0, trie_node_size(0));
 		n->cap = 1;
 		*root = n;
@@ -54,11 +57,13 @@ void *trie_set(struct trie_node **root, const char *key, void *value)
 		int ent = ent_find(n, (unsigned char)*key);
 		if (!trie_is_found(ent, n, *key)) { // create missing node
 			if (!value) // ...unless we're deleting
-				return NULL;
+				return 0;
 			int cap = key[1] ? 1 : 0; // if it's a leaf, use capacity of 0
 			struct trie_node *node = malloc(trie_node_size(cap));
-			if (!node)
-				abort();
+			if (!node) {
+				rv = -1;
+				goto cleanup;
+			}
 			memset(node, 0, trie_node_size(0));
 			node->key = *key;
 			node->cap = cap;
@@ -68,8 +73,11 @@ void *trie_set(struct trie_node **root, const char *key, void *value)
 				// so we have to locate it *before* reallocing.
 				struct trie_node **pent = n->parent ? &n->parent->data[ent_find(n->parent, n->key)] : root;
 				struct trie_node *nn = realloc(n, trie_node_size(n->cap));
-				if (!nn)
-					abort();
+				if (!nn) {
+					free(node);
+					rv = -1;
+					goto cleanup;
+				}
 				if (n != nn) { // update pointers
 					n = nn;
 					*pent = n;
@@ -87,10 +95,12 @@ void *trie_set(struct trie_node **root, const char *key, void *value)
 		}
 		key++;
 	}
-	void *oldvalue = n->value;
-	n->value = value;
+	if (oldvalue)
+		*oldvalue = n->value;
+	n->value = (void *)value; // discard const
 	if (!value) {
 		while (!n->value && !n->len) { // free no longer used nodes
+cleanup:
 			if (n->parent) {
 				struct trie_node *p = n->parent;
 				int ent = ent_find(p, n->key);
@@ -104,7 +114,7 @@ void *trie_set(struct trie_node **root, const char *key, void *value)
 			}
 		}
 	}
-	return oldvalue;
+	return rv;
 }
 // free a trie
 void trie_free(struct trie_node **root) {
@@ -127,8 +137,11 @@ int trie_findnext(struct trie_find **pf) {
 			if (f->len == f->cap) {
 				f->cap *= 2;
 				void *nf = realloc(f, sizeof(struct trie_find)+f->cap);
-				if (!nf)
-					abort();
+				if (!nf) {
+					*pf = NULL;
+					free(f);
+					return -1;
+				}
 				*pf = f = nf;
 			}
 			f->n = f->n->data[ent];
@@ -155,7 +168,7 @@ int trie_findfirst(struct trie_find **pf, struct trie_node **root) {
 		return 0;
 	struct trie_find *f = *pf = malloc(sizeof(struct trie_find)+16);
 	if (!f)
-		return 0;
+		return -1;
 	f->n = *root;
 	f->len = 0;
 	f->cap = 16;

@@ -16,7 +16,7 @@ struct trie_node {
 // get value from trie O(n log s)
 void *trie_get(struct trie_node **root, const char *key);
 // set value in trie O(ns)
-void *trie_set(struct trie_node **root, const char *key, void *value);
+int trie_set(struct trie_node **root, const char *key, const void *value, void **oldvalue);
 // free a trie
 void trie_free(struct trie_node **root);
 struct trie_find {
