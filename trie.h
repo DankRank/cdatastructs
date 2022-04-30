@@ -6,7 +6,7 @@ extern "C" {
 #endif
 // all complexity is in terms of n = strlen(key) and s = size of the character set
 struct trie_node {
-	char key;
+	unsigned char key;
 	unsigned char len;
 	unsigned char cap;
 	void *value;

@@ -10,7 +10,7 @@
 // - past the end pointer (key doesn't exist, larger than any existing key)
 // - ent with different key (key doesn't exist, it should be inserted before this one)
 // - ent with matching key (key exists)
-static int ent_find(struct trie_node *n, char key)
+static int ent_find(struct trie_node *n, int key)
 {
 	int lo = 0;
 	int hi = n->len;
@@ -30,7 +30,7 @@ void *trie_get(struct trie_node **root, const char *key)
 {
 	struct trie_node *n = *root;
 	while (*key) {
-		int ent = ent_find(n, *key);
+		int ent = ent_find(n, (unsigned char)*key);
 		if (!trie_is_found(ent, n, *key))
 			return NULL;
 		n = n->data[ent];
@@ -51,7 +51,7 @@ void *trie_set(struct trie_node **root, const char *key, void *value)
 		*root = n;
 	}
 	while (*key) {
-		int ent = ent_find(n, *key);
+		int ent = ent_find(n, (unsigned char)*key);
 		if (!trie_is_found(ent, n, *key)) {
 			if (!value)
 				return NULL;
@@ -143,7 +143,7 @@ int trie_findnext(struct trie_find **pf) {
 				return 0;
 			}
 			f->len--;
-			ent = f->key[f->len] != '\xff' ? ent_find(f->n, f->key[f->len]+1) : f->n->len;
+			ent = ent_find(f->n, (unsigned char)f->key[f->len] + 1);
 		}
 	}
 }
