@@ -168,12 +168,17 @@ int trie_findnext(struct trie_find **pf) {
 int trie_findfirst(struct trie_find **pf, struct trie_node **root) {
 	if (!*root)
 		return 0;
-	struct trie_find *f = *pf = malloc(sizeof(struct trie_find)+16);
-	if (!f)
-		return -1;
+	struct trie_find *f;
+	if (*pf) {
+		f = *pf;
+	} else {
+		f = *pf = malloc(sizeof(struct trie_find)+16);
+		if (!f)
+			return -1;
+		f->len = 0;
+		f->cap = 16;
+	}
 	f->n = *root;
-	f->len = 0;
-	f->cap = 16;
 	if (f->n->value) {
 		f->key[f->len] = '\0';
 		return 1;

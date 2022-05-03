@@ -9,7 +9,7 @@ void oom() {
 int main(int argc, char **argv)
 {
 	struct trie_node *trie = NULL;
-	struct trie_find *f;
+	struct trie_find *f = NULL;
 	for (int i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "--get")) {
 			if (i+1 >= argc)
