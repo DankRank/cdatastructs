@@ -29,6 +29,8 @@ static int ent_find(struct trie_node *n, int key)
 void *trie_get(struct trie_node **root, const char *key)
 {
 	struct trie_node *n = *root;
+	if (!n)
+		return NULL;
 	while (*key) {
 		int ent = ent_find(n, (unsigned char)*key);
 		if (!trie_is_found(ent, n, *key))
