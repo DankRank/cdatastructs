@@ -175,9 +175,9 @@ int trie_findfirst(struct trie_find **pf, struct trie_node **root) {
 		f = *pf = malloc(sizeof(struct trie_find)+16);
 		if (!f)
 			return -1;
-		f->len = 0;
 		f->cap = 16;
 	}
+	f->len = 0;
 	f->n = *root;
 	if (f->n->value) {
 		f->key[f->len] = '\0';
